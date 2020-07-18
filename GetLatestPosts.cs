@@ -1,15 +1,15 @@
-using Microsoft.Azure.WebJobs;
-using Microsoft.Extensions.Logging;
-using System.Xml;
-using System.ServiceModel.Syndication;
-using System.Linq;
-using System.Collections.Generic;
-using Newtonsoft.Json;
-using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
-using System.Net.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Extensions.Logging;
+using SixLabors.Fonts;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using System.Linq;
+using System.ServiceModel.Syndication;
+using System.Xml;
+using GitHubFuncs.ExtensionMethods;
+using SixLabors.ImageSharp.Formats.Png;
 
 namespace GitHubFuncs
 {
@@ -20,28 +20,29 @@ namespace GitHubFuncs
         {
             try
             {
-                var posts = JsonConvert.SerializeObject(GetLatestFivePosts());
-                if (posts == null) return null;
-                return posts;
+                var postImage = WriteOnImage(GetTopPost());
+                return postImage;
             }
             catch (System.Exception ex)
             {
                 throw ex;
-            }            
+            }
         }
 
-        public static IEnumerable<FeedItem> GetLatestFivePosts()
+        private static string WriteOnImage(SyndicationItem feedItem)
+        {
+            using var img = Image.Load("images/canvas.jpg");
+            var font = SystemFonts.CreateFont("Arial", 20);
+            using var img2 = img.Clone(ctx => ctx.ApplyScalingWaterMark(font, feedItem.Summary.Text, Color.White, 5, true));
+            return img2.ToBase64String(PngFormat.Instance);
+        }
+
+        public static SyndicationItem GetTopPost()
         {
             var reader = XmlReader.Create("https://sibeeshpassion.com/feed");
             var feed = SyndicationFeed.Load(reader);
             reader.Close();
-            return (from itm in feed.Items select new FeedItem { Title = itm.Title.Text, Link = itm.Id }).ToList().Take(5);
-        }
-
-        public class FeedItem
-        {
-            public string Title { get; set; }
-            public string Link { get; set; }
+            return feed.Items.FirstOrDefault();
         }
     }
 }
