@@ -20,16 +20,13 @@ namespace GitHubFuncs
     public static class GetLatestPosts
     {
         [FunctionName("GetLatestPosts")]
-        public static async Task<FileStreamResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest request,
-            ExecutionContext context, ILogger log)
+        public static string Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest request, ILogger log)
         {
             try
             {
-                // var imgPath = Path.Combine(context.FunctionDirectory, "..\\images\\wordart.png");
-
-                // using var imgStream = new FileStream(imgPath, FileMode.Open, FileAccess.ReadWrite);
+                var baseString = WriteOnImage(GetTopPost());
                 log.LogInformation("Returning stream now!");
-                return new FileStreamResult(await WriteOnImage(GetTopPost()), "image/png");
+                return baseString; ;
             }
             catch (System.Exception ex)
             {
@@ -38,14 +35,13 @@ namespace GitHubFuncs
             }
         }
 
-        private static async Task<Stream> WriteOnImage(SyndicationItem feedItem)
+        private static string WriteOnImage(SyndicationItem feedItem)
         {
             using var stream = new MemoryStream();
             using var img = new Image<Rgba32>(500, 200);
             var font = SystemFonts.CreateFont("Arial", 18);
             img.Mutate(ctx => ctx.ApplyScalingWaterMark(font, feedItem.Summary.Text, Color.Black, 5, true));
-            await img.SaveAsync(stream, new PngEncoder());
-            return stream;
+            return img.ToBase64String(PngFormat.Instance);
         }
 
         public static SyndicationItem GetTopPost()
