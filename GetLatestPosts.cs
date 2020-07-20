@@ -14,19 +14,26 @@ using SixLabors.ImageSharp.PixelFormats;
 using System.Threading.Tasks;
 using System.IO;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Net.Http;
 
 namespace GitHubFuncs
 {
     public static class GetLatestPosts
     {
         [FunctionName("GetLatestPosts")]
-        public static string Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest request, ILogger log)
+        public static FileStreamResult Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest request, ILogger log)
         {
             try
             {
                 var baseString = WriteOnImage(GetTopPost());
+                string convert = baseString.Replace("data:image/png;base64,", String.Empty);
+                var bytes = Convert.FromBase64String(convert);
+                var contents = new MemoryStream(bytes);
                 log.LogInformation("Returning stream now!");
-                return baseString; ;
+                var result = new FileStreamResult(contents, "image/png");
+                request.HttpContext.Response.Headers.Add("Cache-Control", "s-maxage=1, stale-while-revalidate");
+                return result; ;
             }
             catch (System.Exception ex)
             {
