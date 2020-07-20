@@ -25,7 +25,7 @@ namespace GitHubFuncs
         {
             try
             {
-                var baseString = WriteOnImage(GetTopPost());
+                var baseString = WriteOnImage(GetLatestFeeds());
                 // Had to do this, as it was throwing error "The input is not a valid Base-64 string as it contains a non-base 64 character"
                 string convert = baseString.Replace("data:image/png;base64,", String.Empty);
                 var bytes = Convert.FromBase64String(convert);
@@ -44,14 +44,13 @@ namespace GitHubFuncs
         private static string WriteOnImage(IEnumerable<SyndicationItem> feedItems)
         {
             var titles = string.Join(", ", feedItems.Select(s => s.Title.Text).ToList());
-            using var stream = new MemoryStream();
             using var img = new Image<Rgba32>(Configuration.ImageWidth, Configuration.ImageHeight);
             var font = SystemFonts.CreateFont(Configuration.Font, Configuration.FontSize);
             img.Mutate(ctx => ctx.ApplyScalingWaterMark(font, titles, Color.Black, 5, true));
             return img.ToBase64String(PngFormat.Instance);
         }
 
-        public static IEnumerable<SyndicationItem> GetTopPost()
+        public static IEnumerable<SyndicationItem> GetLatestFeeds()
         {
             var reader = XmlReader.Create(Configuration.BlogLink);
             var feed = SyndicationFeed.Load(reader);
