@@ -7,6 +7,6 @@
         public static int ImageHeight { get; set; } = 200;
         public static string ContentType { get; set; } = "image/png";
         public static string Font { get; set; } = "Arial";
-        public static int FontSize { get; set; } = 18;
+        public static int FontSize { get; set; } = 5;
     }
 }
