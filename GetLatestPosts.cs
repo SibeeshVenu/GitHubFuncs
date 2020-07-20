@@ -11,11 +11,9 @@ using System.Xml;
 using GitHubFuncs.ExtensionMethods;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
-using System.Threading.Tasks;
 using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Net.Http;
 
 namespace GitHubFuncs
 {
@@ -27,11 +25,11 @@ namespace GitHubFuncs
             try
             {
                 var baseString = WriteOnImage(GetTopPost());
+                // Had to do this, as it was throwing error "The input is not a valid Base-64 string as it contains a non-base 64 character"
                 string convert = baseString.Replace("data:image/png;base64,", String.Empty);
                 var bytes = Convert.FromBase64String(convert);
-                var contents = new MemoryStream(bytes);
+                var result = new FileStreamResult(new MemoryStream(bytes), "image/png");
                 log.LogInformation("Returning stream now!");
-                var result = new FileStreamResult(contents, "image/png");
                 request.HttpContext.Response.Headers.Add("Cache-Control", "s-maxage=1, stale-while-revalidate");
                 return result; ;
             }
@@ -45,7 +43,7 @@ namespace GitHubFuncs
         private static string WriteOnImage(SyndicationItem feedItem)
         {
             using var stream = new MemoryStream();
-            using var img = new Image<Rgba32>(500, 200);
+            using var img = new Image<Rgba32>(850, 200);
             var font = SystemFonts.CreateFont("Arial", 18);
             img.Mutate(ctx => ctx.ApplyScalingWaterMark(font, feedItem.Summary.Text, Color.Black, 5, true));
             return img.ToBase64String(PngFormat.Instance);
