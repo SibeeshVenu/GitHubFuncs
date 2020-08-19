@@ -10,7 +10,9 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Mime;
 using System.ServiceModel.Syndication;
 using System.Threading.Tasks;
 using System.Xml;
@@ -44,12 +46,14 @@ namespace GitHubFuncs
                 var baseString = WriteOnImage(GetLatestFeeds());
                 string convert = baseString.Replace("data:image/png;base64,", String.Empty);
                 var bytes = Convert.FromBase64String(convert);
+                var stream = new MemoryStream(bytes);
                 if (CloudStorageAccount.TryParse(Environment.GetEnvironmentVariable("AzureWebJobsStorage"), out CloudStorageAccount cloudStorageAccount))
                 {
                     var cloudBlobClient = cloudStorageAccount.CreateCloudBlobClient();
                     var cloudBlobContainer = cloudBlobClient.GetContainerReference(_blobContainerName);
                     var cloudBlockBlob = cloudBlobContainer.GetBlockBlobReference(_fileName);
-                    await cloudBlockBlob.UploadFromByteArrayAsync(bytes, 0, bytes.Length);
+                    cloudBlockBlob.Properties.ContentType = "image/png";
+                    await cloudBlockBlob.UploadFromStreamAsync(stream);
                     _logger.LogInformation("Uploaded new image");
                 }
                 else
